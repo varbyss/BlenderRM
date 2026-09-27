@@ -1,0 +1,5 @@
+customtkinter>=5.2.2
+requests>=2.32.3
+Pillow>=11.1.0
+psutil>=5.9.0
+zstandard>=0.23.0

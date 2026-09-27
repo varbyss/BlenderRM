@@ -1,0 +1,8 @@
+__pycache__/
+*.pyc
+*.pyo
+blender_monitor_config.json
+blender_monitor_history.json
+.blender_monitor_probecache/
+*.blend1
+crashlog.txt

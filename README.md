@@ -1,129 +1,228 @@
-# Blender Render Manager (BRM)
+<p align="center">
+  <img src="512x512logo.png" width="128" alt="BRM logo">
+</p>
 
-A desktop app by **var** that renders many Blender files one after another,
-in the background, while you do something else. You add `.blend` files to a
-queue, press START, and the app opens Blender for each file behind the scenes,
-renders the frames, and moves on to the next file by itself.
+<h1 align="center">Blender Render Manager (BRM)</h1>
 
-No Blender knowledge is needed to use it. If you can press ADD FILES and
-START, you can use it.
+<p align="center">
+  Queue <code>.blend</code> files, press START, walk away.<br>
+  Renders happen in the background — you get a message when it's done.
+</p>
 
-## What it can do (and how)
+<p align="center">
+  <img src="https://img.shields.io/badge/version-2.0.0-blue" alt="version 2.0.0">
+  <img src="https://img.shields.io/badge/python-3.10%2B-green" alt="python 3.10+">
+  <img src="https://img.shields.io/badge/platform-Windows-lightgrey" alt="Windows">
+  <img src="https://img.shields.io/badge/blender-3.x%E2%80%935.x-orange" alt="Blender 3.x-5.x">
+</p>
 
-**Render queue.** Add `.blend` files with ADD FILES (or Ctrl+O, or drag the
- +.blend button in the top bar). Press START and every file renders in turn.
- Add more files any time, even while it renders — new files join the same run.
- Select several jobs with Ctrl+click (one more / one less) or Shift+click
- (a whole range). Drag rows up and down to change the render order. Delete
- removes the selected jobs. Right-click a row for move, duplicate,
- enable/disable, requeue, refresh info, test frame, convert, open folder.
+## Contents
 
-**Per-job settings.** Click a job and the right panel shows its settings:
- scene, camera, view layer, frames, resolution + percent, engine, samples,
- film transparent, output folder, FPS, file format, color mode, Python args.
- Empty means "use what is saved in the file". MATCH SOURCE copies everything
- from the file into the job with one click. The queue rows always show the
- real values (scene, camera, resolution, engine, progress %, MP4 badge).
+- [What it does](#what-it-does)
+- [Install](#install)
+- [First setup](#first-setup)
+- [Daily use](#daily-use)
+- [Features in detail](#features-in-detail)
+- [Settings tour](#settings-tour)
+- [Discord messages](#discord-messages)
+- [Files it creates](#files-it-creates)
+- [Tests](#tests)
+- [Troubleshooting](#troubleshooting)
 
-**Live viewport.** Shows the newest rendered picture of the job that is
- rendering right now (read straight from its output folder). Clicking other
- jobs does not steal it mid-render. Hide the viewport panel and it frees its
- memory; showing it again reloads the picture.
+## What it does
 
-**Progress + log.** The bottom panel has PROGRESS (bar, frame counter, times)
- and LOG tabs. The log color-codes lines: green = done, red = crashed/failed,
- amber = warnings/stops, blue = info. The status bar shows success rate.
+BRM renders many Blender files one after another **without you watching**.
+Add files to the queue, press START, and each file opens in Blender behind
+the scenes, renders its frames, and moves on. Finished jobs become MP4s in
+one click. No Blender knowledge needed to run it.
 
-**History.** Only finished blend projects land here (everything else stays in
- the log). Double-click magic: none — use Open Folder to jump to the renders.
+## Install
 
-**MP4 convert.** Select finished jobs (or press Convert MP4 with nothing
- selected to take all finished jobs without an MP4 yet) and the app runs
- ffmpeg on them, at most 2 at once so they don't choke each other. Finished
- rows get an MP4 READY badge. MP4 from folder works on any folder of PNGs.
+**You need:**
 
-**Crash restarts.** If Blender crashes, the app waits a few seconds and
- restarts that job where it left off (already-rendered frames are reused).
- Set the number of tries next to the checkbox; after that it marks the job
- Failed and moves on. Stopped jobs keep their state and resume on next START.
+| Thing | Why | Where |
+|---|---|---|
+| Python 3.10+ (check *Add to PATH*) | runs the app | https://www.python.org/downloads/ |
+| Blender 3.x–5.x | does the rendering | https://www.blender.org/download/ |
+| ffmpeg | only for MP4 convert | https://ffmpeg.org/download/ |
 
-**Sim files (Hurricane etc.).** Physics/sim objects render invisible in
- background Blender — this is a Blender limitation, not a bug. Turn on
- "Auto GUI mode for sim files" and those jobs render with a visible Blender
- window so sims bake and show correctly. You can also force it per job.
-
-**Test frame.** Right-click a job > Render test frame: renders one frame
- through the real pipeline. Fast way to check cameras, layers, and sims.
-
-**Discord messages.** Start / progress / done / crash / stop messages, all
- editable in Settings > Discord with simple `{placeholders}` listed there.
- Bad templates fall back to built-ins instead of breaking.
-
-**Sounds + finish actions.** Soft ding when the queue finishes (toggleable),
- double-ding on crashes. On completion: do nothing, shut the PC down in
- 60 seconds, or sleep. Shutdown/sleep only fire when the whole queue is done
- (never mid-queue, never after a manual stop, never with jobs left over).
-
-**Layout.** Every panel (queue, viewport, progress, properties, log) lives in
- a tabbed slot you can rearrange: drag tabs between slots, drop at a slot
- edge to split it side-by-side (the edge lights up blue), double-click a tab
- or drag it out of the window to hide it. Empty slots collapse to a slim
- strip. Window size, position, column widths, bottom height, tabs, splits,
- selection and scroll are all remembered between restarts. Layout presets
- live in the queue menu, plus a Panels checklist to show/hide anything.
-
-**Fast file reading.** The app reads scene/camera/resolution info straight
- from `.blend` files without starting Blender (with a disk cache), so adding
- files is instant and cameras appear by themselves. Big files parse in the
- background with progress in the log.
-
-## Install guide
-
-1. Install **Python 3.10 or newer** (https://www.python.org/downloads/).
-   During install, check "Add python.exe to PATH".
-2. Install **Blender** (3.x–5.x) and **ffmpeg** (https://ffmpeg.org/download/).
-   ffmpeg is only needed for MP4 convert.
-3. Open a terminal in this folder and install the needed packages:
+**Then:**
 
 ```bat
+cd path\to\BlenderRM
 pip install -r requirements.txt
-```
-
-That installs: `customtkinter` = the modern widgets, `pillow` = image
- display, `psutil` = pause/resume support, `requests` = Discord messages,
- `zstandard` = fast reading of compressed `.blend` files. All optional
- except `customtkinter` + `pillow` — without the rest, those features
- quietly turn themselves off. Keep `512x512logo.png` next to the script
- (used for the window/taskbar icon).
-
-4. Start the app:
-
-```bat
 python BRM_opencode.pyw
 ```
 
-## Setup guide (first run)
+| Package | Used for | Required? |
+|---|---|---|
+| `customtkinter` | modern widgets | yes |
+| `pillow` | image display | yes |
+| `psutil` | pause/resume | no — feature turns itself off |
+| `requests` | Discord messages | no — feature turns itself off |
+| `zstandard` | fast reading of compressed `.blend` files | no — falls back to Blender |
 
-1. Open **Settings** (gear icon) > General and set your **Blender executable
-   path** (use Browse). The app tries to find it by itself first (Steam and
+> Keep `512x512logo.png` next to the script (window/taskbar icon).
+
+## First setup
+
+1. Open **Settings** (gear icon) → **General** → set your **Blender
+   executable** with Browse. The app tries to find it alone (Steam and
    Program Files are checked), but confirm it.
-2. Same place: set **ffmpeg.exe path** if auto-detect missed it (only needed
-   for Convert to MP4).
-3. Decide: **Auto GUI mode for sim files** ON if you render physics/sim
-   files (safe choice), OFF for pure background speed.
-4. Decide: **Auto-load full file info** ON (cameras appear by themselves;
-   big files take a while once, then cached) or OFF (instant adding,
-   details load on Refresh/render).
-5. In **Discord** tab, paste your webhook URL to get phone/PC messages.
-   Edit any message text; the `{words}` it understands are listed there.
-6. Press **ADD FILES**, pick `.blend` files, click jobs to check their
-   settings, press **START**.
-7. When frames are done, select jobs and **Convert MP4** (footer button does
-   the selection, or everything finished).
+2. Set **ffmpeg.exe path** (only needed for Convert to MP4).
+3. **Auto GUI mode for sim files** — keep ON if you render physics/sim
+   files (safe choice), OFF for pure background speed. Details below.
+4. **Auto full file info** — ON means cameras/resolution appear by
+   themselves (big files take a while once, then cached); OFF means instant
+   adding, details load on Refresh/render.
+5. **Discord tab** → paste your webhook URL for start/progress/done/crash
+   messages. Every message text is editable; the `{words}` it understands
+   are listed right in the tab.
+6. Press **ADD FILES**, click jobs to check settings, press **START**.
 
-Your settings, queue, layout and history live in
+Settings, queue, layout and history live in
 `C:\Users\<you>\blender_monitor_config.json` — back it up if the queue
 matters to you.
+
+## Daily use
+
+| Do this | How |
+|---|---|
+| Add files | ADD FILES, Ctrl+O, or the `+` button |
+| Select | click; Ctrl+click toggles; Shift+click takes a range |
+| Reorder | drag rows up/down |
+| Remove | Delete key, `x` button, or right-click → Remove |
+| Row menu | right-click: move, duplicate, enable/disable, requeue, refresh info, **test frame**, convert, open folder |
+| Hide a panel | double-click its tab, right-click → Hide, or drag it out of the window |
+| Split a slot side-by-side | drop a tab at the slot's left/right edge (it lights up blue) |
+| Layout presets | queue menu (≡) → Layout; Panels checklist shows/hides anything |
+| Convert | footer **Convert MP4** (selection, else all finished without MP4) |
+| After render | history lists finished projects; Open Folder jumps to files |
+
+## Features in detail
+
+<details>
+<summary><b>Render queue</b> — batch rendering that survives real life</summary>
+
+- Jobs render in order; jobs added mid-render join the same run.
+- Structural edits (remove/move/duplicate/clear) are blocked mid-render so
+  the running loop can't corrupt; appending is always safe.
+- Crashes restart the job where it left off (already-rendered frames are
+  reused). Set tries next to the checkbox; after that the job is marked
+  Failed and the queue moves on. Stopped jobs resume on next START.
+- Missing files are skipped as Failed, disabled jobs as OFF.
+- Double START is refused; quitting the app kills Blender/ffmpeg instead of
+  orphaning them; corrupt config boots to defaults.
+</details>
+
+<details>
+<summary><b>Per-job settings</b> — scene, camera, resolution, format…</summary>
+
+Click a job: scene, camera, view layer, frames, resolution + percent,
+engine, samples, film transparent, output folder (with `{scene_name}` /
+`{camera_name}` variables), FPS, format, color, Python args. Empty = use
+what's saved in the file. **MATCH SOURCE** copies everything from the file
+in one click. Rows always show the real values plus progress % and MP4 state.
+</details>
+
+<details>
+<summary><b>Viewport</b> — the newest picture, full resolution</summary>
+
+- Follows the job that is **rendering** (clicking other jobs can't hijack it).
+- Picture comes from the output folder: newest frame file, loaded as-is,
+  never downscaled. Works even when Blender prints nothing (skipped/resumed
+  frames).
+- Hidden viewport holds no image memory; showing it reloads. Tiles +
+  scanline frame show only when there is no picture yet.
+</details>
+
+<details>
+<summary><b>Progress + log</b></summary>
+
+- Bottom tabs: PROGRESS (bar, frame counter, times) and LOG.
+- Log lines are color-coded: 🟩 done · 🟥 crashed/failed · 🟨 warnings/stops
+  · 🟦 info. Long sessions auto-trim so the app never slows down.
+- Status bar: success rate plus last finished job.
+</details>
+
+<details>
+<summary><b>MP4 convert</b></summary>
+
+- Converts the selection (or all finished jobs without an MP4), **max 2
+  ffmpeg at once** so they don't choke each other, then reports `n/n ok`.
+- Finished rows earn an **MP4 READY** badge. MP4-from-folder works on any
+  PNG folder. Same FFmpeg flags you already use (`-crf 12`, `yuv444p`,
+  bt709).
+</details>
+
+<details>
+<summary><b>Sim files</b> — read this if objects vanish</summary>
+
+Physics/sim objects render **invisible** in background Blender — a Blender
+limitation, proven here (sim data reads back empty headless). Fix: keep
+**Auto GUI mode for sim files** ON (or per-job GUI checkbox). Those jobs
+then render in a visible Blender window that closes itself with an exit
+code, so success/failure still routes correctly and the queue advances.
+</details>
+
+<details>
+<summary><b>Layout</b> — Premiere-style, everything persists</summary>
+
+- 5 panels (queue, viewport, progress, properties, log) in 4 tabbed slots.
+- Drag tabs between slots; drop at an edge for a side-by-side split;
+  empty slots collapse to a slim strip; `+` and the Panels menu bring
+  anything back.
+- Window size/position, column widths, bottom height, tabs, splits,
+  selection and scroll are all remembered. Drop guides light up while
+  dragging; the landed tab flashes.
+</details>
+
+<details>
+<summary><b>Fast file reading</b></summary>
+
+- Scene/camera/resolution/sim flags are parsed straight from `.blend`
+  files (Blender 5.x headers, zstd, DNA) — no Blender startup needed.
+- Results cache on disk; duplicate queue entries parse once and share.
+- Automatic background reads never launch Blender and pause while rendering.
+  Toggleable per above.
+</details>
+
+<details>
+<summary><b>Sounds + finish actions</b></summary>
+
+Soft ding when the queue finishes (toggleable), double-ding on crashes.
+On completion: nothing, PC shutdown in 60 s, or sleep — fires once after
+**all** files (never mid-queue, never after manual stop).
+</details>
+
+## Settings tour
+
+| Tab | What lives there |
+|---|---|
+| General | Blender + ffmpeg paths, quiet/console/GUI toggles, preview + auto-probe toggles, batch limit, retry delay, **finish sound**, auto-restart + **tries**, on-completion action |
+| Discord | on/off, webhook URL, update interval, editable title/description + **start / done / crash / stop** messages |
+| FFmpeg | path, default FPS/CRF, convert-folder button |
+| History | finished projects only, refresh / open folder / clear |
+
+## Discord messages
+
+Placeholders you can use in any template:
+
+```
+{filename} {scene} {camera} {start} {end} {frame} {attempt}
+{avg} {est} {bar} {pct} {elapsed} {duration} {date}
+```
+
+Broken templates fall back to built-ins instead of breaking the render.
+
+## Files it creates
+
+| File | What |
+|---|---|
+| `blender_monitor_config.json` (home folder) | settings + queue + layout |
+| `blender_monitor_history.json` (home folder) | finished renders |
+| `.blender_monitor_probecache/` (home folder) | parsed file info |
+| `crashlog.txt` (app folder) | crash records |
 
 ## Tests
 
@@ -131,19 +230,20 @@ matters to you.
 python -m unittest discover -s tests
 ```
 
-Needs a display (it opens the real app off-screen). ~100 checks cover
-docking, tabs, splits, probes, settings, queue ops, viewport and converts.
+Needs a display (opens the real app off-screen). ~100 checks: docking,
+tabs, splits, probes, settings, queue ops, viewport, converts, render-loop
+guards.
 
-## If something looks wrong
+## Troubleshooting
 
-- **Sim objects missing in renders** → turn on Auto GUI mode (or per-job
-  GUI checkbox). Background Blender cannot bake sims.
-- **Viewport shows old/no picture** → check the log: it now says why
-  (format it can't display, e.g. EXR, or previews waiting on first frame).
-- **A job is skipped** → file path broken (row says MISSING FILE) or job
-  disabled (row says OFF).
-- **Queue looks frozen while adding big files** → first probe pass is
-  working through them; watch the `Probing i/N` log lines. It caches after.
-- **Second job never starts** → check the log tail: per-job `STARTING`
-  lines plus `[BRM gui] render finished ok=` markers show exactly where it
-  stopped.
+| Problem | Fix |
+|---|---|
+| Sim objects missing in renders | Turn on Auto GUI mode (global or per-job) |
+| Viewport shows old/no picture | Check the log: it says why (e.g. `.exr` can't display); PNG/JPG/TIF always work |
+| Job skipped | Row says MISSING FILE (bad path) or OFF (disabled) |
+| Second job never starts | Log tail: per-job `STARTING` lines + `[BRM gui] render finished ok=` show where it stopped |
+| Frozen while adding big files | First probe pass is working through them (`Probing i/N` lines); cached after. Turn off auto full-probe for instant adds |
+| Still stuck | Read the log tail — process lifecycle (stops, kills, stalls, gui markers) is narrated there; paste it with a bug report |
+
+---
+Made by **var** · v2.0.0
